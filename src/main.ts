@@ -55,15 +55,15 @@ function groupMatchesByLeaderboard(
       throw new Error("Match already in a Leaderboard");
     }
 
-    const players = match.teams.faction1.roster.map(
-      (player) => player.nickname
+    const teams = match.teams.faction1.roster.concat(
+      match.teams.faction2.roster
     );
+    const players = teams.map((player) => player.nickname);
 
     for (const player of players) {
-      if (leaderboardEntry.players.has(player)) {
-        throw new Error(`Duplicate player '${player}' in leaderboard`);
+      if (!leaderboardEntry.players.has(player)) {
+        leaderboardEntry.players.add(player);
       }
-      leaderboardEntry.players.add(player);
     }
 
     leaderboardEntry.matches.push(match);
@@ -84,7 +84,7 @@ function printLeaderboardMatches(matchesByLeaderboard: MatchesByLeaderboard[]) {
     );
     console.log("Total de partidas: ", matches.length);
     console.log("Total de jogadoras: ", players?.size);
-
+    
     for (const match of matches) {
       console.log(match.match_id, " - ", formatEpochDate(match.started_at));
     }
@@ -97,7 +97,7 @@ async function getAllMatches(): Promise<HubMatch[]> {
 
   let offset = 0;
   while (true) {
-    const { items } = await findHubMatches({ offset });
+    const { items } = await findHubMatches({ limit: 100, offset });
 
     if (items.length === 0) break;
 
@@ -108,7 +108,7 @@ async function getAllMatches(): Promise<HubMatch[]> {
       }
     }
 
-    offset += items.length;
+    offset += 100;
   }
 
   console.log("Total de partidas no HUBI -> ", matches.length);
